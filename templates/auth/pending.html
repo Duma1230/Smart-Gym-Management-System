@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Registration Pending Approval - Smart Gym{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper" style="text-align: center;">
+    <div class="card">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+        <h2 class="card-title">Registration Pending Approval</h2>
+        <p class="card-subtitle">Thank you for registering with Smart Gym!</p>
+
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.7;">
+            Your account application is currently under review by our Gym Administration team. 
+            Once your registration is verified, you will be able to sign in and view your membership details.
+        </p>
+
+        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.9rem;">
+            <strong>Next Steps:</strong>
+            <ul style="margin-left: 1.25rem; margin-top: 0.5rem; color: var(--text-secondary);">
+                <li>Visit the gym reception desk to confirm your registration.</li>
+                <li>Choose your membership plan and complete offline payment (Cash, POS Card, Bank Transfer).</li>
+                <li>The administrator will activate your account and assign your fitness trainer.</li>
+            </ul>
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-block">Return to Home</a>
+    </div>
+</div>
+{% endblock %}

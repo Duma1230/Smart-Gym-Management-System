@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Trainer Dashboard - Smart Gym{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 2rem; font-weight: 700;">Trainer Dashboard</h1>
+    <p style="color: var(--text-secondary);">Welcome, Coach {{ current_user_name }} &bull; Manage your assigned gym members</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-label">Assigned Members</span>
+        <span class="stat-value">{{ assigned_count }}</span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Members under your guidance</span>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="card-title">Assigned Members & Workout Management</h2>
+    <p class="card-subtitle">Trainers can only access members assigned to them by the Admin</p>
+
+    <div style="margin-top: 1.5rem; background: var(--bg-primary); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+            Database tables for workout routines (<code>workout_plans</code>, <code>workout_plan_items</code>) and fitness progress metrics (<code>fitness_progress</code>) are prepared in <code>smart_gym_db</code>.
+        </p>
+        <span class="badge badge-info">Trainer Portal Foundation Active</span>
+    </div>
+</div>
+{% endblock %}

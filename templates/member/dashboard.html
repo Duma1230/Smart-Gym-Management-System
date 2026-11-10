@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}My Portal - Smart Gym{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 2rem; font-weight: 700;">Member Portal</h1>
+    <p style="color: var(--text-secondary);">Welcome, {{ current_user_name }} &bull; Your gym membership &amp; fitness portal</p>
+</div>
+
+<!-- 1. Membership Plan Status -->
+{% if membership and membership.status == 'active' and not is_expired %}
+    <!-- Active Membership Card -->
+    <div class="card" style="margin-bottom: 2rem; border-color: rgba(16, 185, 129, 0.5); background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(16, 185, 129, 0.05));">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.25rem;">
+            <div>
+                <span class="badge badge-success" style="font-size: 0.8rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    ● Active Membership
+                </span>
+                <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary); margin-top: 0.25rem;">
+                    {{ membership.plan_name }}
+                </h2>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.35rem; max-width: 600px;">
+                    {{ membership.description if membership.description else 'Full access to gym equipment, cardio zone, and locker facilities.' }}
+                </p>
+            </div>
+
+            <div style="text-align: right;">
+                <div style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Plan Fee</div>
+                <div style="font-size: 2rem; font-weight: 800; color: var(--accent); line-height: 1.1;">
+                    LKR {{ "{:,.2f}".format(membership.price) }}
+                </div>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.75rem; margin-top: 0.25rem;">Paid in Full</span>
+            </div>
+        </div>
+
+        <!-- Membership Key Metrics Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em;">Start Date</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.2rem;">
+                    {{ membership.start_date }}
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em;">Expiry Date</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #60a5fa; margin-top: 0.2rem;">
+                    {{ membership.end_date }}
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em;">Remaining Period</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-top: 0.2rem;">
+                    {{ days_left }} Days Left
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.05em;">Duration</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.2rem;">
+                    {{ membership.duration_days }} Days
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% elif membership and membership.status == 'pending_payment' %}
+    <!-- Pending Payment Card -->
+    <div class="card" style="margin-bottom: 2rem; border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.06);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <span class="badge badge-warning" style="margin-bottom: 0.5rem; text-transform: uppercase;">
+                    ⏳ Payment Pending
+                </span>
+                <h2 class="card-title">{{ membership.plan_name }}</h2>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.25rem;">
+                    Your subscription of <strong>LKR {{ "{:,.2f}".format(membership.price) }}</strong> is assigned and awaiting offline payment at the gym reception desk.
+                </p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.8rem; font-weight: 800; color: #fbbf24;">LKR {{ "{:,.2f}".format(membership.price) }}</div>
+                <div class="member-sub">Due upon arrival</div>
+            </div>
+        </div>
+
+        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-top: 1.25rem; font-size: 0.9rem;">
+            <strong>How to activate your membership:</strong>
+            <p style="color: var(--text-secondary); margin-top: 0.25rem;">
+                Please visit the front desk to settle payment using <strong>Cash</strong>, <strong>POS Card</strong>, <strong>Bank Transfer</strong>, or <strong>Cheque</strong>. The administrator will record your payment and immediately activate your account.
+            </p>
+        </div>
+    </div>
+
+{% elif membership and (is_expired or membership.status == 'expired') %}
+    <!-- Expired Membership Card -->
+    <div class="card" style="margin-bottom: 2rem; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.06);">
+        <span class="badge badge-danger" style="margin-bottom: 0.5rem;">Expired Membership</span>
+        <h2 class="card-title">{{ membership.plan_name }}</h2>
+        <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+            Your previous membership expired on <strong>{{ membership.end_date }}</strong>. Please consult with gym management to renew your subscription.
+        </p>
+    </div>
+
+{% else %}
+    <!-- No Active Membership Fallback -->
+    <div class="card" style="margin-bottom: 2rem; border-color: rgba(59, 130, 246, 0.4); text-align: center; padding: 3rem 1.5rem;">
+        <div style="font-size: 3rem; margin-bottom: 0.75rem;">🏋️‍♂️</div>
+        <h2 class="card-title" style="font-size: 1.5rem;">No Active Membership Plan</h2>
+        <p style="color: var(--text-secondary); max-width: 550px; margin: 0.5rem auto 1.5rem; line-height: 1.7;">
+            Welcome to Smart Gym! You currently do not have an active membership plan. Please visit our front reception desk to select your membership package and complete your offline payment (Cash, POS Card, Bank Transfer, or Cheque) to activate your account.
+        </p>
+        <div style="display: inline-block; background: var(--bg-primary); padding: 0.6rem 1.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-secondary);">
+            📍 Front Desk Hours: Mon - Sat: 6:00 AM - 10:00 PM &bull; Sun: 8:00 AM - 8:00 PM
+        </div>
+    </div>
+{% endif %}
+
+<!-- 2. Trainer & Feature Highlights -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Assigned Trainer Card -->
+    <div class="card">
+        <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>🏋️</span> Personal Trainer
+        </h3>
+        {% if trainer %}
+            <div style="margin-top: 0.75rem;">
+                <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">Coach {{ trainer.full_name }}</div>
+                <div style="font-size: 0.85rem; color: var(--accent); margin-top: 0.15rem;">{{ trainer.specialization if trainer.specialization else 'Certified Fitness Specialist' }}</div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.6;">
+                    {{ trainer.bio if trainer.bio else 'Your coach is dedicated to creating customized workout plans and monitoring your fitness progress.' }}
+                </p>
+                <div class="member-sub" style="margin-top: 0.75rem;">
+                    Email: {{ trainer.email }} {% if trainer.phone %}&bull; Phone: {{ trainer.phone }}{% endif %}
+                </div>
+            </div>
+        {% else %}
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.75rem;">
+                No personal trainer is assigned yet. The gym administrator will assign a certified trainer to your profile upon membership activation.
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Quick Stats & Routine Card -->
+    <div class="card">
+        <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>📋</span> Workouts &amp; Progress
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.75rem; line-height: 1.6;">
+            Your assigned trainer will design a tailored workout schedule with exercises, sets, and repetitions tailored to your fitness goals.
+        </p>
+        <div style="margin-top: 1rem;">
+            <span class="badge badge-info">Workout Routine (Phase 3)</span>
+            <span class="badge badge-info" style="margin-left: 0.4rem;">Fitness Progress (Phase 3)</span>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Offline Payment History -->
+<div class="card" style="padding: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h2 class="card-title" style="margin: 0;">Payment History &amp; Receipts</h2>
+            <p class="card-subtitle" style="margin: 0; margin-top: 0.2rem;">
+                Official record of offline payments confirmed by gym administration
+            </p>
+        </div>
+        <span style="font-size: 0.85rem; color: var(--text-secondary);">
+            {{ payments | length }} transaction{% if payments | length != 1 %}s{% endif %}
+        </span>
+    </div>
+
+    {% if payments %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Receipt #</th>
+                        <th>Subscription Plan</th>
+                        <th>Payment Date</th>
+                        <th>Amount Paid</th>
+                        <th>Payment Mode</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                        <tr>
+                            <td>
+                                <strong style="font-family: monospace; font-size: 0.95rem; color: var(--text-primary);">
+                                    {{ p.reference_number if p.reference_number else ('REC-' ~ "%04d" % p.id) }}
+                                </strong>
+                            </td>
+                            <td>{{ p.plan_name }}</td>
+                            <td>{{ p.payment_date }}</td>
+                            <td>
+                                <strong style="color: var(--accent); font-size: 1.05rem;">
+                                    LKR {{ "{:,.2f}".format(p.amount) }}
+                                </strong>
+                            </td>
+                            <td>
+                                <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">
+                                    {{ p.payment_method }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-success">Confirmed</span>
+                            </td>
+                            <td style="font-size: 0.85rem; color: var(--text-secondary);">
+                                {{ p.notes if p.notes else 'Paid at reception' }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state" style="padding: 2.5rem 1rem;">
+            <div class="empty-state-icon">🧾</div>
+            <div class="empty-state-title">No Payment Records Yet</div>
+            <p style="font-size: 0.9rem; margin-top: 0.25rem;">
+                Offline payment receipts will appear here once recorded and confirmed by the gym administration.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Gym - Membership & Fitness Management{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 3rem auto; text-align: center;">
+    <div style="display: inline-block; padding: 0.35rem 1rem; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 9999px; color: var(--accent); font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem;">
+        Academic Project &bull; Phase 1 Architecture Ready
+    </div>
+
+    <h1 style="font-size: 2.75rem; font-weight: 800; line-height: 1.2; margin-bottom: 1.25rem;">
+        Intelligent Gym Management &amp; <span style="color: var(--accent);">Fitness Tracking</span>
+    </h1>
+
+    <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto 2.5rem; line-height: 1.7;">
+        A centralized management system for gym administrators, certified fitness trainers, and active members. Seamlessly organize memberships, track progress, and manage routines.
+    </p>
+
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3.5rem;">
+        {% if not is_logged_in %}
+            <a href="{{ url_for('auth.register') }}" class="btn btn-accent" style="padding: 0.85rem 2rem; font-size: 1rem;">
+                Member Registration &rarr;
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-secondary" style="padding: 0.85rem 2rem; font-size: 1rem;">
+                Account Login
+            </a>
+        {% else %}
+            {% if current_user_role == 'admin' %}
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-accent" style="padding: 0.85rem 2rem;">Go to Admin Dashboard &rarr;</a>
+            {% elif current_user_role == 'trainer' %}
+                <a href="{{ url_for('trainer.dashboard') }}" class="btn btn-accent" style="padding: 0.85rem 2rem;">Go to Trainer Dashboard &rarr;</a>
+            {% elif current_user_role == 'member' %}
+                <a href="{{ url_for('member.dashboard') }}" class="btn btn-accent" style="padding: 0.85rem 2rem;">Go to Member Portal &rarr;</a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- System Roles Feature Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; text-align: left;">
+        <div class="card">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🛡️</div>
+            <h3 class="card-title">Administrator</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                Review and approve member registrations, configure membership plans, record offline cash/POS payments, manage attendance, and assign trainers.
+            </p>
+        </div>
+
+        <div class="card">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🏋️‍♂️</div>
+            <h3 class="card-title">Fitness Trainer</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                Access assigned members exclusively, tailor multi-day workout routines, and record weekly body measurements and fitness progress.
+            </p>
+        </div>
+
+        <div class="card">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🎯</div>
+            <h3 class="card-title">Active Member</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                Self-register, view verified membership validity, review payment receipts, inspect personal workout schedules, and visualize fitness trends.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

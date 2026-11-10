@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}Member Verification & Management - Admin{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 2rem; font-weight: 700;">Member Verification &amp; Management</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.2rem;">
+            Review incoming registrations, verify member accounts, and manage gym access.
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">&larr; Admin Dashboard</a>
+    </div>
+</div>
+
+<!-- Summary Status Cards -->
+<div class="stats-grid" style="margin-bottom: 1.75rem;">
+    <a href="{{ url_for('admin.members', status='all') }}" style="text-decoration: none; color: inherit;">
+        <div class="stat-card" style="{% if current_status == 'all' %}border-color: var(--primary); background: rgba(59, 130, 246, 0.08);{% endif %}">
+            <span class="stat-label">Total Members</span>
+            <span class="stat-value">{{ counts.all }}</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Registered member accounts</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('admin.members', status='pending') }}" style="text-decoration: none; color: inherit;">
+        <div class="stat-card" style="border-color: rgba(245, 158, 11, 0.5); {% if current_status == 'pending' %}background: rgba(245, 158, 11, 0.12); border-color: var(--warning);{% endif %}">
+            <span class="stat-label" style="color: #fbbf24;">Pending Verification</span>
+            <span class="stat-value" style="color: #fbbf24;">{{ counts.pending }}</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Awaiting Admin approval</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('admin.members', status='approved') }}" style="text-decoration: none; color: inherit;">
+        <div class="stat-card" style="border-color: rgba(16, 185, 129, 0.4); {% if current_status == 'approved' %}background: rgba(16, 185, 129, 0.1); border-color: var(--accent);{% endif %}">
+            <span class="stat-label" style="color: #34d399;">Approved Members</span>
+            <span class="stat-value" style="color: #34d399;">{{ counts.approved }}</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Active access permitted</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('admin.members', status='rejected') }}" style="text-decoration: none; color: inherit;">
+        <div class="stat-card" style="border-color: rgba(239, 68, 68, 0.4); {% if current_status == 'rejected' %}background: rgba(239, 68, 68, 0.1); border-color: var(--danger);{% endif %}">
+            <span class="stat-label" style="color: #f87171;">Rejected Members</span>
+            <span class="stat-value" style="color: #f87171;">{{ counts.rejected }}</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Applications declined</span>
+        </div>
+    </a>
+</div>
+
+<!-- Main Table Card -->
+<div class="card" style="padding: 1.5rem;">
+    <!-- Filter Navigation & Search Bar -->
+    <div class="filter-tabs-wrapper">
+        <div class="filter-tabs">
+            <a href="{{ url_for('admin.members', status='all', q=search_query) }}"
+               class="filter-tab {% if current_status == 'all' %}active{% endif %}">
+                All Members <span class="count-pill">{{ counts.all }}</span>
+            </a>
+            <a href="{{ url_for('admin.members', status='pending', q=search_query) }}"
+               class="filter-tab tab-pending {% if current_status == 'pending' %}active{% endif %}">
+                ⏳ Pending Approvals <span class="count-pill" style="{% if counts.pending > 0 %}background: var(--warning); color: #000;{% endif %}">{{ counts.pending }}</span>
+            </a>
+            <a href="{{ url_for('admin.members', status='approved', q=search_query) }}"
+               class="filter-tab {% if current_status == 'approved' %}active{% endif %}">
+                ✓ Approved <span class="count-pill">{{ counts.approved }}</span>
+            </a>
+            <a href="{{ url_for('admin.members', status='rejected', q=search_query) }}"
+               class="filter-tab tab-rejected {% if current_status == 'rejected' %}active{% endif %}">
+                ✕ Rejected <span class="count-pill">{{ counts.rejected }}</span>
+            </a>
+        </div>
+
+        <!-- Search Form -->
+        <form method="GET" action="{{ url_for('admin.members') }}" class="search-form">
+            <input type="hidden" name="status" value="{{ current_status }}">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search name, email, phone..." class="search-input">
+            <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+            {% if search_query %}
+                <a href="{{ url_for('admin.members', status=current_status) }}" class="btn btn-outline btn-sm" title="Clear Search">&times;</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Members Table -->
+    {% if members %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Contact Info</th>
+                        <th>Registered Date</th>
+                        <th>Profile Details</th>
+                        <th>Status</th>
+                        <th style="text-align: right;">Verification Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in members %}
+                        <tr>
+                            <!-- Member Name & ID -->
+                            <td>
+                                <div class="member-cell">
+                                    <div class="avatar">
+                                        {{ m.full_name[:2] | upper }}
+                                    </div>
+                                    <div>
+                                        <div class="member-name">{{ m.full_name }}</div>
+                                        <div class="member-sub">ID: #MEM-{{ "%04d" % m.id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Contact Info -->
+                            <td>
+                                <div style="font-weight: 500;">{{ m.email }}</div>
+                                <div class="member-sub">{{ m.phone if m.phone else 'No phone provided' }}</div>
+                            </td>
+
+                            <!-- Registration Date -->
+                            <td>
+                                <div style="font-weight: 500;">
+                                    {% if m.created_at is string %}
+                                        {{ m.created_at[:10] }}
+                                    {% elif m.created_at %}
+                                        {{ m.created_at.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                                <div class="member-sub">
+                                    {% if m.created_at is string and m.created_at | length > 16 %}
+                                        {{ m.created_at[11:16] }}
+                                    {% elif m.created_at and m.created_at.strftime %}
+                                        {{ m.created_at.strftime('%H:%M') }}
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- Profile Details -->
+                            <td>
+                                <div style="font-size: 0.85rem; color: var(--text-primary);">
+                                    {% if m.gender %}
+                                        <span style="text-transform: capitalize;">{{ m.gender }}</span>
+                                    {% else %}
+                                        <span>Gender unlisted</span>
+                                    {% endif %}
+                                    {% if m.date_of_birth %}
+                                        &bull; DOB: {{ m.date_of_birth }}
+                                    {% endif %}
+                                </div>
+                                <div class="member-sub">
+                                    {% if m.emergency_contact %}
+                                        Emergency: {{ m.emergency_contact }}
+                                    {% else %}
+                                        No emergency contact
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- Account Status Badge -->
+                            <td>
+                                {% if m.status == 'approved' %}
+                                    <span class="badge badge-success">Approved</span>
+                                    {% if m.current_plan_name %}
+                                        <div class="member-sub" style="color: var(--accent); font-weight: 600; margin-top: 0.25rem;">
+                                            {{ m.current_plan_name }}
+                                        </div>
+                                    {% elif m.latest_membership_status == 'pending_payment' %}
+                                        <div class="member-sub" style="color: #fbbf24; margin-top: 0.25rem;">
+                                            ⏳ Payment Pending
+                                        </div>
+                                    {% else %}
+                                        <div class="member-sub" style="margin-top: 0.25rem;">
+                                            No Active Plan
+                                        </div>
+                                    {% endif %}
+                                {% elif m.status == 'pending' %}
+                                    <span class="badge badge-warning">Pending Approval</span>
+                                {% elif m.status == 'rejected' %}
+                                    <span class="badge badge-danger">Rejected</span>
+                                {% else %}
+                                    <span class="badge" style="background: rgba(148, 163, 184, 0.2); color: #cbd5e1;">{{ m.status }}</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Actions -->
+                            <td style="text-align: right; white-space: nowrap;">
+                                <div style="display: inline-flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                                    {% if m.status == 'pending' %}
+                                        <!-- Approve Button -->
+                                        <form method="POST" action="{{ url_for('admin.approve_member', user_id=m.id) }}" style="display: inline;">
+                                            <input type="hidden" name="current_status" value="{{ current_status }}">
+                                            <button type="submit" class="btn btn-success btn-sm" title="Approve registration and grant login access">
+                                                ✓ Approve
+                                            </button>
+                                        </form>
+
+                                        <!-- Reject Button -->
+                                        <form method="POST" action="{{ url_for('admin.reject_member', user_id=m.id) }}"
+                                              onsubmit="return confirm('Are you sure you want to reject registration for {{ m.full_name }}?');"
+                                              style="display: inline;">
+                                            <input type="hidden" name="current_status" value="{{ current_status }}">
+                                            <button type="submit" class="btn btn-danger-outline btn-sm" title="Reject registration">
+                                                ✕ Reject
+                                            </button>
+                                        </form>
+
+                                    {% elif m.status == 'rejected' %}
+                                        <!-- Re-Approve Option -->
+                                        <form method="POST" action="{{ url_for('admin.approve_member', user_id=m.id) }}" style="display: inline;">
+                                            <input type="hidden" name="current_status" value="{{ current_status }}">
+                                            <button type="submit" class="btn btn-outline btn-sm" title="Re-approve member">
+                                                ✓ Re-Approve
+                                            </button>
+                                        </form>
+
+                                    {% elif m.status == 'approved' %}
+                                        <!-- Record Payment / Assign Plan -->
+                                        <a href="{{ url_for('admin.record_payment', member_id=m.id) }}" class="btn btn-accent btn-sm" title="Assign Plan / Record Offline Payment">
+                                            + Pay / Plan
+                                        </a>
+
+                                        <!-- Reject / Revoke Option -->
+                                        <form method="POST" action="{{ url_for('admin.reject_member', user_id=m.id) }}"
+                                              onsubmit="return confirm('Are you sure you want to revoke/reject {{ m.full_name }}\'s account access?');"
+                                              style="display: inline;">
+                                            <input type="hidden" name="current_status" value="{{ current_status }}">
+                                            <button type="submit" class="btn btn-danger-outline btn-sm" title="Revoke / Reject access" style="opacity: 0.8;">
+                                                Revoke
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                {% if current_status == 'pending' %}
+                    🎉
+                {% elif search_query %}
+                    🔍
+                {% else %}
+                    👥
+                {% endif %}
+            </div>
+            <div class="empty-state-title">
+                {% if current_status == 'pending' %}
+                    No Pending Registrations
+                {% elif current_status == 'approved' %}
+                    No Approved Members Found
+                {% elif current_status == 'rejected' %}
+                    No Rejected Members Found
+                {% elif search_query %}
+                    No Members Matching "{{ search_query }}"
+                {% else %}
+                    No Registered Members Found
+                {% endif %}
+            </div>
+            <p style="font-size: 0.9rem; max-width: 420px; margin: 0 auto 1.25rem;">
+                {% if current_status == 'pending' %}
+                    All member registration requests have been processed. Great job!
+                {% elif search_query %}
+                    Try searching with another keyword or clearing your query filter.
+                {% else %}
+                    New members can register themselves using the public registration form.
+                {% endif %}
+            </p>
+            {% if search_query or current_status != 'all' %}
+                <a href="{{ url_for('admin.members', status='all') }}" class="btn btn-secondary btn-sm">
+                    View All Members
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

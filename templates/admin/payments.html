@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Offline Payment Management - Admin{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 2rem; font-weight: 700;">Offline Payment Management</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.2rem;">
+            Track and record offline member payments (Cash, POS Card, Bank Transfer, Cheque) to activate memberships.
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('admin.record_payment') }}" class="btn btn-accent">+ Record Offline Payment</a>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">&larr; Dashboard</a>
+    </div>
+</div>
+
+<!-- Summary Status Cards -->
+<div class="stats-grid" style="margin-bottom: 2rem;">
+    <div class="stat-card" style="border-color: rgba(16, 185, 129, 0.4);">
+        <span class="stat-label" style="color: #34d399;">Total Collected Revenue</span>
+        <span class="stat-value" style="color: #34d399;">LKR {{ "{:,.2f}".format(total_revenue) }}</span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">From offline payments</span>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">Total Transactions</span>
+        <span class="stat-value">{{ total_transactions }}</span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Confirmed payment receipts</span>
+    </div>
+
+    <div class="stat-card" style="border-color: rgba(245, 158, 11, 0.4);">
+        <span class="stat-label" style="color: #fbbf24;">Pending Memberships</span>
+        <span class="stat-value" style="color: #fbbf24;">{{ pending_memberships | length }}</span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Awaiting payment confirmation</span>
+    </div>
+</div>
+
+<!-- Pending Memberships Awaiting Payment Alert Banner -->
+{% if pending_memberships %}
+    <div class="card" style="margin-bottom: 2rem; border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.05); padding: 1.25rem 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+                <h3 style="font-size: 1.1rem; color: #fbbf24; font-weight: 700; margin-bottom: 0.2rem;">
+                    ⏳ Memberships Awaiting Offline Payment ({{ pending_memberships | length }})
+                </h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                    These memberships have been assigned but require offline payment recording before becoming active.
+                </p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table" style="font-size: 0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Assigned Plan</th>
+                        <th>Amount Due</th>
+                        <th>Duration Period</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pm in pending_memberships %}
+                        <tr>
+                            <td>
+                                <strong>{{ pm.member_name }}</strong>
+                                <div class="member-sub">{{ pm.member_email }}</div>
+                            </td>
+                            <td>{{ pm.plan_name }}</td>
+                            <td><strong style="color: var(--accent);">LKR {{ "{:,.2f}".format(pm.price) }}</strong></td>
+                            <td>{{ pm.start_date }} to {{ pm.end_date }}</td>
+                            <td style="text-align: right;">
+                                <a href="{{ url_for('admin.record_payment', member_id=pm.member_id, membership_id=pm.id) }}" class="btn btn-accent btn-sm">
+                                    Record Payment &rarr;
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Payments History Table Card -->
+<div class="card" style="padding: 1.5rem;">
+    <!-- Filter Navigation & Search Bar -->
+    <div class="filter-tabs-wrapper">
+        <div class="filter-tabs">
+            <a href="{{ url_for('admin.payments', method='all', q=search_query) }}"
+               class="filter-tab {% if current_method == 'all' %}active{% endif %}">
+                All Methods
+            </a>
+            {% for method in allowed_methods %}
+                <a href="{{ url_for('admin.payments', method=method, q=search_query) }}"
+                   class="filter-tab {% if current_method == method %}active{% endif %}">
+                    {{ method }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <!-- Search Form -->
+        <form method="GET" action="{{ url_for('admin.payments') }}" class="search-form">
+            <input type="hidden" name="method" value="{{ current_method }}">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Member name, email, ref #..." class="search-input">
+            <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+            {% if search_query %}
+                <a href="{{ url_for('admin.payments', method=current_method) }}" class="btn btn-outline btn-sm" title="Clear Search">&times;</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Payments Table -->
+    {% if payments %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Receipt / Ref #</th>
+                        <th>Member</th>
+                        <th>Plan</th>
+                        <th>Amount Paid</th>
+                        <th>Method</th>
+                        <th>Payment Date</th>
+                        <th>Notes / Handled By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                        <tr>
+                            <td>
+                                <strong style="color: var(--text-primary); font-family: monospace; font-size: 0.95rem;">
+                                    {{ p.reference_number if p.reference_number else ('REC-' ~ "%04d" % p.id) }}
+                                </strong>
+                                <div class="member-sub">Txn #{{ p.id }}</div>
+                            </td>
+
+                            <td>
+                                <div class="member-name">{{ p.member_name }}</div>
+                                <div class="member-sub">{{ p.member_email }}</div>
+                            </td>
+
+                            <td>
+                                <div>{{ p.plan_name }}</div>
+                                <div class="member-sub">
+                                    <span class="badge badge-success" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;">Active</span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span style="font-weight: 700; font-size: 1.1rem; color: var(--accent);">
+                                    LKR {{ "{:,.2f}".format(p.amount) }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-size: 0.8rem; font-weight: 600;">
+                                    {{ p.payment_method }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <div style="font-weight: 500;">{{ p.payment_date }}</div>
+                                <div class="member-sub">{{ p.created_at.strftime('%H:%M') if p.created_at and p.created_at.strftime else '' }}</div>
+                            </td>
+
+                            <td>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    {{ p.notes if p.notes else 'No notes' }}
+                                </div>
+                                <div class="member-sub">
+                                    Admin: {{ p.recorded_by_name if p.recorded_by_name else 'System' }}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">💵</div>
+            <div class="empty-state-title">No Payment Records Found</div>
+            <p style="font-size: 0.9rem; margin-bottom: 1.5rem;">
+                {% if search_query or current_method != 'all' %}
+                    No payments match your filter criteria. Try resetting the filters.
+                {% else %}
+                    No offline payments have been recorded yet. Click below to record the first payment.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('admin.record_payment') }}" class="btn btn-accent btn-sm">+ Record Payment</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
