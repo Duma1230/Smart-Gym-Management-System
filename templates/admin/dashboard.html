@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Smart Gym{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 2rem; font-weight: 700;">Admin Dashboard</h1>
+    <p style="color: var(--text-secondary);">System overview and administrative control center</p>
+</div>
+
+<!-- Overview Stats Cards -->
+<div class="stats-grid">
+    <a href="{{ url_for('admin.members', status='all') }}" style="text-decoration: none; color: inherit;">
+        <div class="stat-card" style="transition: transform 0.15s ease, border-color 0.15s ease; cursor: pointer;">
+            <span class="stat-label">Total Members</span>
+            <span class="stat-value">{{ stats.total_members }}</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Registered accounts &rarr;</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('admin.members', status='pending') }}" style="text-decoration: none; color: inherit;">
+        <div class="stat-card" style="border-color: rgba(245, 158, 11, 0.5); transition: transform 0.15s ease, border-color 0.15s ease; cursor: pointer;">
+            <span class="stat-label" style="color: #fbbf24;">Pending Verification</span>
+            <span class="stat-value" style="color: #fbbf24;">{{ stats.pending_approvals }}</span>
+            <span style="font-size: 0.8rem; color: #fbbf24;">Review applications &rarr;</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('admin.plans') }}" style="text-decoration: none; color: inherit;">
+        <div class="stat-card" style="border-color: rgba(59, 130, 246, 0.4); transition: transform 0.15s ease, border-color 0.15s ease; cursor: pointer;">
+            <span class="stat-label">Membership Plans</span>
+            <span class="stat-value">{{ stats.active_plans }}</span>
+            <span style="font-size: 0.8rem; color: var(--primary);">Manage plans &rarr;</span>
+        </div>
+    </a>
+
+    <a href="{{ url_for('admin.payments') }}" style="text-decoration: none; color: inherit;">
+        <div class="stat-card" style="border-color: rgba(16, 185, 129, 0.4); transition: transform 0.15s ease, border-color 0.15s ease; cursor: pointer;">
+            <span class="stat-label" style="color: #34d399;">Total Revenue</span>
+            <span class="stat-value" style="color: #34d399;">LKR {{ "{:,.2f}".format(stats.total_revenue) }}</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">{{ stats.total_payments }} payments &rarr;</span>
+        </div>
+    </a>
+</div>
+
+<div class="card">
+    <h2 class="card-title">Administrative Operations</h2>
+    <p class="card-subtitle">Quick access to management modules</p>
+
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+        <a href="{{ url_for('admin.members') }}" class="btn btn-primary">Manage Members &amp; Approvals</a>
+        <a href="{{ url_for('admin.plans') }}" class="btn btn-secondary">Membership Plans</a>
+        <a href="{{ url_for('admin.payments') }}" class="btn btn-secondary">Offline Payment History</a>
+        <a href="{{ url_for('admin.record_payment') }}" class="btn btn-accent">+ Record Offline Payment</a>
+        <a href="{{ url_for('admin.trainers') }}" class="btn btn-secondary">Trainer Management</a>
+        <a href="{{ url_for('admin.attendance') }}" class="btn btn-secondary">Attendance Management</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Trainer Dashboard - Smart Gym{% endblock %}
+{% block content %}
+<h1>Trainer Dashboard</h1><p class="card-subtitle">Welcome, Coach {{ current_user_name }}. Manage your assigned members.</p>
+<div class="stats-grid"><div class="stat-card"><span class="stat-label">Assigned Members</span><span class="stat-value">{{ assigned_count }}</span></div></div>
+<div class="card"><h2 class="card-title">My Assigned Members</h2><div class="table-responsive"><table class="table"><thead><tr><th>Member</th><th>Contact</th><th>Management</th></tr></thead><tbody>
+{% for m in members %}<tr><td><strong>{{ m.full_name }}</strong></td><td>{{ m.email }}<div class="member-sub">{{ m.phone or '' }}</div></td><td><a class="btn btn-secondary btn-sm" href="{{ url_for('trainer.workouts',member_id=m.id) }}">Workouts</a> <a class="btn btn-primary btn-sm" href="{{ url_for('trainer.progress',member_id=m.id) }}">Fitness Progress</a></td></tr>{% else %}<tr><td colspan="3">No members have been assigned to you yet.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

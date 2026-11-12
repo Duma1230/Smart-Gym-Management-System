@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Workout Plans - Smart Gym{% endblock %}
+{% block content %}
+<h1>Workout Plans – {{ member.full_name }}</h1><p class="card-subtitle">Create and manage workout plans for this assigned member.</p>
+<div class="card" style="margin:1.5rem 0"><h2 class="card-title">Create Workout Plan</h2>
+<form method="post">
+<div class="form-row">
+<div class="form-group"><label class="form-label">Plan title</label><input class="form-control" name="title" required maxlength="150"></div>
+<div class="form-group"><label class="form-label">Fitness goal</label><input class="form-control" name="goal" placeholder="e.g. Strength and endurance"></div>
+<div class="form-group"><label class="form-label">Start date</label><input class="form-control" type="date" name="start_date" value="{{ today }}" required></div>
+<div class="form-group"><label class="form-label">End date (optional)</label><input class="form-control" type="date" name="end_date"></div>
+<div class="form-group"><label class="form-label">Exercise name</label><input class="form-control" name="exercise_name" required></div>
+<div class="form-group"><label class="form-label">Day</label><select class="form-control" name="day_of_week">{% for d in days %}<option>{{ d }}</option>{% endfor %}</select></div>
+<div class="form-group"><label class="form-label">Sets</label><input class="form-control" type="number" name="sets" min="1" max="30" value="3" required></div>
+<div class="form-group"><label class="form-label">Repetitions</label><input class="form-control" name="reps" value="10-12" required></div>
+</div>
+<div class="form-group"><label class="form-label">Exercise instructions</label><input class="form-control" name="instructions" maxlength="255"></div>
+<div class="form-group"><label class="form-label">Plan notes</label><textarea class="form-control" name="notes" rows="2"></textarea></div>
+<button class="btn btn-primary">Create Plan</button></form></div>
+{% for p in plans %}<div class="card" style="margin-bottom:1rem"><div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap"><div><h2 class="card-title">{{ p.title }}</h2><p class="member-sub">{{ p.goal or 'No goal specified' }} · {{ p.start_date }} to {{ p.end_date or 'Ongoing' }} · {{ p.status }}</p></div>
+<form method="post" action="{{ url_for('trainer.workout_status',plan_id=p.id) }}"><select class="form-control" name="status" style="display:inline-block;width:auto"><option value="active" {{ 'selected' if p.status=='active' }}>Active</option><option value="completed" {{ 'selected' if p.status=='completed' }}>Completed</option><option value="archived" {{ 'selected' if p.status=='archived' }}>Archived</option></select><button class="btn btn-secondary btn-sm">Update</button></form></div>
+{% if p.notes %}<p>{{ p.notes }}</p>{% endif %}
+<details style="margin:1rem 0"><summary style="cursor:pointer;color:var(--accent)">Edit plan details</summary>
+<form method="post" action="{{ url_for('trainer.edit_workout',plan_id=p.id) }}" class="form-row" style="margin-top:1rem">
+<div class="form-group"><label class="form-label">Title</label><input class="form-control" name="title" value="{{ p.title }}" required></div>
+<div class="form-group"><label class="form-label">Goal</label><input class="form-control" name="goal" value="{{ p.goal or '' }}"></div>
+<div class="form-group"><label class="form-label">Start date</label><input class="form-control" type="date" name="start_date" value="{{ p.start_date }}" required></div>
+<div class="form-group"><label class="form-label">End date</label><input class="form-control" type="date" name="end_date" value="{{ p.end_date or '' }}"></div>
+<div class="form-group"><label class="form-label">Notes</label><input class="form-control" name="notes" value="{{ p.notes or '' }}"></div>
+<div class="form-group" style="align-self:end"><button class="btn btn-secondary">Save Plan</button></div>
+</form></details>
+<div class="table-responsive"><table class="table"><thead><tr><th>Day</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Instructions</th></tr></thead><tbody>{% for i in p["items"] %}<tr><td colspan="5"><details><summary style="cursor:pointer">{{ i.day_of_week }} · {{ i.exercise_name }} · {{ i.sets }} sets × {{ i.reps }}</summary>
+<form method="post" action="{{ url_for('trainer.edit_workout_item',item_id=i.id) }}" class="form-row" style="margin-top:.75rem">
+<div class="form-group"><label class="form-label">Exercise</label><input class="form-control" name="exercise_name" value="{{ i.exercise_name }}" required></div>
+<div class="form-group"><label class="form-label">Day</label><select class="form-control" name="day_of_week">{% for d in days %}<option {{ 'selected' if d==i.day_of_week }}>{{ d }}</option>{% endfor %}</select></div>
+<div class="form-group"><label class="form-label">Sets</label><input class="form-control" type="number" min="1" max="30" name="sets" value="{{ i.sets }}"></div>
+<div class="form-group"><label class="form-label">Reps</label><input class="form-control" name="reps" value="{{ i.reps }}"></div>
+<div class="form-group"><label class="form-label">Instructions</label><input class="form-control" name="instructions" value="{{ i.instructions or '' }}"></div>
+<div class="form-group" style="align-self:end"><button class="btn btn-secondary btn-sm">Save Exercise</button></div></form>
+<form method="post" action="{{ url_for('trainer.delete_workout_item',item_id=i.id) }}" style="margin:.5rem 0"><button class="btn btn-danger btn-sm">Remove Exercise</button></form>
+</details></td></tr>{% else %}<tr><td colspan="5">No exercises yet.</td></tr>{% endfor %}</tbody></table></div>
+<details style="margin:1rem 0"><summary style="cursor:pointer;color:var(--accent)">Add another exercise</summary>
+<form method="post" action="{{ url_for('trainer.add_workout_item',plan_id=p.id) }}" class="form-row" style="margin-top:.75rem">
+<div class="form-group"><label class="form-label">Exercise</label><input class="form-control" name="exercise_name" required></div>
+<div class="form-group"><label class="form-label">Day</label><select class="form-control" name="day_of_week">{% for d in days %}<option>{{ d }}</option>{% endfor %}</select></div>
+<div class="form-group"><label class="form-label">Sets</label><input class="form-control" type="number" name="sets" min="1" max="30" value="3"></div>
+<div class="form-group"><label class="form-label">Reps</label><input class="form-control" name="reps" value="10-12"></div>
+<div class="form-group"><label class="form-label">Instructions</label><input class="form-control" name="instructions"></div>
+<div class="form-group" style="align-self:end"><button class="btn btn-primary btn-sm">Add Exercise</button></div></form></details>
+<form method="post" action="{{ url_for('trainer.delete_workout',plan_id=p.id) }}" onsubmit="return confirm('Delete this workout plan?')"><button class="btn btn-danger btn-sm">Delete Plan</button></form></div>{% else %}<div class="card">No workout plans created for this member yet.</div>{% endfor %}
+{% endblock %}

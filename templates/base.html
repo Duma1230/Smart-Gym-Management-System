@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Gym Management System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('home') }}" class="brand" aria-label="Smart Gym home">
+                <img src="{{ url_for('static', filename='img/smart-gym-logo.webp') }}" alt="Smart Gym - Train, Transform, Thrive" class="brand-logo">
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="{{ url_for('home') }}">Home</a></li>
+
+                    {% if is_logged_in %}
+                        {% if current_user_role == 'admin' %}
+                            <li><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                            <li><a href="{{ url_for('admin.members') }}">Members</a></li>
+                            <li><a href="{{ url_for('admin.plans') }}">Plans</a></li>
+                            <li><a href="{{ url_for('admin.payments') }}">Payments</a></li>
+                            <li><a href="{{ url_for('admin.trainers') }}">Trainers</a></li>
+                            <li><a href="{{ url_for('admin.attendance') }}">Attendance</a></li>
+                        {% elif current_user_role == 'trainer' %}
+                            <li><a href="{{ url_for('trainer.dashboard') }}">Trainer Dashboard</a></li>
+                        {% elif current_user_role == 'member' %}
+                            <li><a href="{{ url_for('member.dashboard') }}">My Gym</a></li>
+                        {% endif %}
+
+                        <li><span class="nav-role-badge">{{ current_user_role }}</span></li>
+                        <li><a href="{{ url_for('auth.logout') }}" class="btn btn-outline" style="padding: 0.35rem 0.8rem; font-size: 0.85rem;">Logout</a></li>
+                    {% else %}
+                        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                        <li><a href="{{ url_for('auth.register') }}" class="btn btn-accent" style="padding: 0.4rem 0.9rem; font-size: 0.85rem;">Join Now</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button type="button" class="alert-close" aria-label="Close">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 Smart Gym Membership & Fitness Management System &bull; Academic Project</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

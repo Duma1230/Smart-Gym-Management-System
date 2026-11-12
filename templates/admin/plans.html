@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Membership Plans Management - Admin{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 2rem; font-weight: 700;">Membership Plans Management</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.2rem;">
+            Create, update, and manage gym subscription packages and pricing tiers.
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <button id="toggle-add-plan-btn" class="btn btn-accent" onclick="toggleAddPlanForm()">+ Add New Plan</button>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">&larr; Dashboard</a>
+    </div>
+</div>
+
+<!-- Add New Plan Form (Collapsible) -->
+<div id="add-plan-container" class="card" style="display: none; margin-bottom: 2rem; border-color: rgba(16, 185, 129, 0.4);">
+    <h2 class="card-title">Create New Membership Plan</h2>
+    <p class="card-subtitle">Define the plan parameters, duration in days, and offline subscription price.</p>
+
+    <form method="POST" action="{{ url_for('admin.create_plan') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="plan_name" class="form-label">Plan Name *</label>
+                <input type="text" id="plan_name" name="plan_name" class="form-control" placeholder="e.g. 6-Month Elite Fitness" required>
+            </div>
+            <div class="form-group">
+                <label for="duration_days" class="form-label">Duration (Days) *</label>
+                <input type="number" id="duration_days" name="duration_days" class="form-control" placeholder="e.g. 30, 90, 180, 365" min="1" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="price" class="form-label">Price (LKR) *</label>
+                <input type="number" step="0.01" id="price" name="price" class="form-control" placeholder="e.g. 6000.00" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="description" class="form-label">Description / Perks</label>
+                <input type="text" id="description" name="description" class="form-control" placeholder="e.g. Full equipment access, locker, 1 trainer consultation">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+            <button type="submit" class="btn btn-accent">Save Membership Plan</button>
+            <button type="button" class="btn btn-secondary" onclick="toggleAddPlanForm()">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<!-- Plans Summary Statistics -->
+<div class="stats-grid" style="margin-bottom: 2rem;">
+    <div class="stat-card">
+        <span class="stat-label">Total Plans</span>
+        <span class="stat-value">{{ total_plans }}</span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Configured in system</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label" style="color: #34d399;">Active Plans</span>
+        <span class="stat-value" style="color: #34d399;">{{ active_plans }}</span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Available for assignment</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Quick Actions</span>
+        <div style="margin-top: 0.75rem;">
+            <a href="{{ url_for('admin.record_payment') }}" class="btn btn-primary btn-sm">+ Assign &amp; Pay</a>
+        </div>
+    </div>
+</div>
+
+<!-- Plans Table Card -->
+<div class="card" style="padding: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 class="card-title" style="margin: 0;">Configured Membership Plans</h2>
+        <span style="font-size: 0.85rem; color: var(--text-secondary);">{{ plans | length }} plans found</span>
+    </div>
+
+    {% if plans %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Plan Name</th>
+                        <th>Duration</th>
+                        <th>Price</th>
+                        <th>Description</th>
+                        <th>Active Members</th>
+                        <th>Status</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in plans %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: var(--text-primary); font-size: 1rem;">
+                                    {{ p.plan_name }}
+                                </div>
+                                <div class="member-sub">ID: #PLN-{{ "%03d" % p.id }}</div>
+                            </td>
+
+                            <td>
+                                <span style="font-weight: 600;">{{ p.duration_days }}</span> days
+                                <div class="member-sub">
+                                    {% if p.duration_days == 30 %}~1 Month
+                                    {% elif p.duration_days == 90 %}~3 Months (Quarterly)
+                                    {% elif p.duration_days == 180 %}~6 Months
+                                    {% elif p.duration_days == 365 %}1 Year (Annual)
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <td>
+                                <span style="font-weight: 700; font-size: 1.1rem; color: var(--accent);">LKR {{ "{:,.2f}".format(p.price) }}</span>
+                            </td>
+
+                            <td style="max-width: 280px;">
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    {{ p.description if p.description else 'No description provided.' }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-size: 0.8rem;">
+                                    {{ p.enrolled_count }} enrolled
+                                </span>
+                            </td>
+
+                            <td>
+                                {% if p.is_active == 1 %}
+                                    <span class="badge badge-success">Active</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Deactivated</span>
+                                {% endif %}
+                            </td>
+
+                            <td style="text-align: right; white-space: nowrap;">
+                                <div style="display: inline-flex; gap: 0.5rem; justify-content: flex-end;">
+                                    <!-- Edit Trigger Button -->
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="openEditPlanModal('{{ p.id }}', '{{ p.plan_name | escape }}', '{{ p.duration_days }}', '{{ p.price }}', '{{ (p.description or '') | escape }}')">
+                                        Edit
+                                    </button>
+
+                                    <!-- Deactivate / Reactivate Form -->
+                                    <form method="POST" action="{{ url_for('admin.toggle_plan_status', plan_id=p.id) }}" style="display: inline;">
+                                        {% if p.is_active == 1 %}
+                                            <button type="submit" class="btn btn-danger-outline btn-sm" title="Deactivate Plan">
+                                                Deactivate
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-outline btn-sm" title="Reactivate Plan" style="border-color: var(--accent); color: var(--accent);">
+                                                Activate
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-title">No Membership Plans Found</div>
+            <p style="font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Create your first membership plan to start enrolling gym members.
+            </p>
+            <button class="btn btn-accent btn-sm" onclick="toggleAddPlanForm()">+ Create First Plan</button>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Edit Plan Modal -->
+<div id="edit-plan-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div class="card" style="max-width: 550px; width: 100%; border-color: var(--border-color); box-shadow: var(--shadow-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h2 class="card-title" style="margin: 0;">Edit Membership Plan</h2>
+            <button type="button" onclick="closeEditPlanModal()" style="background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="edit-plan-form" method="POST" action="">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="edit_plan_name" class="form-label">Plan Name *</label>
+                    <input type="text" id="edit_plan_name" name="plan_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_duration_days" class="form-label">Duration (Days) *</label>
+                    <input type="number" id="edit_duration_days" name="duration_days" class="form-control" min="1" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="edit_price" class="form-label">Price (LKR) *</label>
+                    <input type="number" step="0.01" id="edit_price" name="price" class="form-control" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_description" class="form-label">Description</label>
+                    <input type="text" id="edit_description" name="description" class="form-control">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeEditPlanModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Plan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAddPlanForm() {
+    const el = document.getElementById("add-plan-container");
+    const btn = document.getElementById("toggle-add-plan-btn");
+    if (el.style.display === "none" || !el.style.display) {
+        el.style.display = "block";
+        btn.textContent = "✕ Close Form";
+        document.getElementById("plan_name").focus();
+    } else {
+        el.style.display = "none";
+        btn.textContent = "+ Add New Plan";
+    }
+}
+
+function openEditPlanModal(id, name, duration, price, desc) {
+    const modal = document.getElementById("edit-plan-modal");
+    const form = document.getElementById("edit-plan-form");
+    form.action = `/admin/plans/${id}/edit`;
+    document.getElementById("edit_plan_name").value = name;
+    document.getElementById("edit_duration_days").value = duration;
+    document.getElementById("edit_price").value = price;
+    document.getElementById("edit_description").value = desc;
+    modal.style.display = "flex";
+}
+
+function closeEditPlanModal() {
+    document.getElementById("edit-plan-modal").style.display = "none";
+}
+
+// Close modal when clicking outside of the card
+window.addEventListener("click", function(event) {
+    const modal = document.getElementById("edit-plan-modal");
+    if (event.target === modal) {
+        closeEditPlanModal();
+    }
+});
+</script>
+{% endblock %}

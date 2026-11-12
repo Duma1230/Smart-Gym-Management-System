@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Attendance Management - Smart Gym{% endblock %}
+{% block content %}
+<h1>Attendance Management</h1><p class="card-subtitle">Record and review daily member attendance.</p>
+<div class="card" style="margin:1.5rem 0"><h2 class="card-title">Record Attendance</h2>
+<form method="post" class="form-row">
+<div class="form-group"><label class="form-label">Member</label><select class="form-control" name="member_id" required><option value="">Select member</option>{% for m in members %}<option value="{{ m.id }}">{{ m.full_name }}</option>{% endfor %}</select></div>
+<div class="form-group"><label class="form-label">Date</label><input class="form-control" type="date" name="attendance_date" value="{{ today }}" required></div>
+<div class="form-group"><label class="form-label">Check-in time</label><input class="form-control" type="time" name="check_in_time" value="08:00"></div>
+<div class="form-group"><label class="form-label">Status</label><select class="form-control" name="status"><option>Present</option><option>Absent</option></select></div>
+<div class="form-group" style="align-self:end"><button class="btn btn-primary">Save Attendance</button></div>
+</form></div>
+<div class="stats-grid">
+<div class="stat-card"><span class="stat-label">Records on selected date</span><span class="stat-value">{{ summary.total or 0 }}</span></div>
+<div class="stat-card"><span class="stat-label">Present</span><span class="stat-value">{{ summary.present_count or 0 }}</span></div>
+<div class="stat-card"><span class="stat-label">Absent</span><span class="stat-value">{{ summary.absent_count or 0 }}</span></div>
+</div>
+<div class="card"><h2 class="card-title">Attendance Records</h2>
+<form method="get" class="search-form" style="margin:1rem 0;flex-wrap:wrap"><input class="search-input" name="q" value="{{ q }}" placeholder="Search member"><input class="form-control" style="max-width:180px" type="date" name="date" value="{{ date_filter }}"><button class="btn btn-secondary">Filter</button><a class="btn btn-outline" href="{{ url_for('admin.attendance') }}">Clear</a></form>
+<div class="table-responsive"><table class="table"><thead><tr><th>Member</th><th>Date</th><th>Check-in</th><th>Status</th></tr></thead><tbody>{% for r in records %}<tr><td>{{ r.full_name }}<div class="member-sub">{{ r.email }}</div></td><td>{{ r.attendance_date }}</td><td>{{ r.check_in_time }}</td><td>{{ r.status }}</td></tr>{% else %}<tr><td colspan="4">No attendance records found.</td></tr>{% endfor %}</tbody></table></div>
+<p class="member-sub">Showing up to 300 most recent records.</p></div>
+{% endblock %}

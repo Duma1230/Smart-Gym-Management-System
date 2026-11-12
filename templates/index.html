@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Gym | Train. Transform. Thrive.{% endblock %}
+
+{% block content %}
+<div class="home-page">
+    <section class="hero-section">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <span class="eyebrow"><span class="eyebrow-dot"></span> YOUR FITNESS JOURNEY STARTS HERE</span>
+            <h1>BUILD A STRONGER<br><span>VERSION OF YOU.</span></h1>
+            <p>Train with purpose. Track your progress. Become the strongest version of yourself with a gym experience built around your goals.</p>
+            <div class="hero-actions">
+                {% if not is_logged_in %}
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-accent btn-hero">Start Your Journey <span aria-hidden="true">→</span></a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-glass btn-hero">Member Login</a>
+                {% else %}
+                    {% if current_user_role == 'admin' %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-accent btn-hero">Open Admin Dashboard →</a>
+                    {% elif current_user_role == 'trainer' %}
+                        <a href="{{ url_for('trainer.dashboard') }}" class="btn btn-accent btn-hero">Open Trainer Dashboard →</a>
+                    {% elif current_user_role == 'member' %}
+                        <a href="{{ url_for('member.dashboard') }}" class="btn btn-accent btn-hero">Open My Gym →</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="hero-proof">
+                <div><strong>01</strong><span>Personal goals</span></div>
+                <div><strong>02</strong><span>Expert guidance</span></div>
+                <div><strong>03</strong><span>Real progress</span></div>
+            </div>
+        </div>
+        <div class="hero-scroll">SCROLL TO EXPLORE <span>↓</span></div>
+    </section>
+
+    <section class="intro-strip">
+        <p>MORE THAN A WORKOUT. <span>IT'S A COMMITMENT TO YOURSELF.</span></p>
+    </section>
+
+    <section class="home-section about-section">
+        <div class="section-image-wrap">
+            <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1100&q=85" alt="Modern gym interior with professional fitness equipment" loading="lazy">
+            <div class="image-tag"><strong>YOUR SPACE.</strong><span>YOUR PACE. YOUR PROGRESS.</span></div>
+        </div>
+        <div class="section-copy">
+            <span class="section-kicker">WELCOME TO SMART GYM</span>
+            <h2>MAKE EVERY<br><span>REP COUNT.</span></h2>
+            <p>Whether you're taking your first step or pushing toward a new personal best, Smart Gym brings your fitness journey and membership experience together in one place.</p>
+            <ul class="check-list">
+                <li>Training plans designed around your goals</li>
+                <li>Progress tracking to celebrate every milestone</li>
+                <li>Membership support and a welcoming fitness community</li>
+            </ul>
+            {% if not is_logged_in %}
+                <a href="{{ url_for('auth.register') }}" class="text-link">BECOME A MEMBER <span>↗</span></a>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="program-section">
+        <div class="section-heading">
+            <span class="section-kicker">WHAT YOU GET</span>
+            <h2>BUILT AROUND <span>YOUR GOALS.</span></h2>
+            <p>Everything you need to stay focused, consistent and moving forward.</p>
+        </div>
+        <div class="program-grid">
+            <article class="program-card">
+                <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=900&q=85" alt="Athlete strength training with weights" loading="lazy">
+                <div class="program-card-content"><span>01 / TRAIN</span><h3>Personalised Workouts</h3><p>Follow structured routines and exercise guidance from your trainer.</p></div>
+            </article>
+            <article class="program-card">
+                <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=900&q=85" alt="Personal trainer coaching a gym member" loading="lazy">
+                <div class="program-card-content"><span>02 / GROW</span><h3>Expert Guidance</h3><p>Stay connected with your trainer and keep your fitness goals in focus.</p></div>
+            </article>
+            <article class="program-card">
+                <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=900&q=85" alt="Athlete training and building fitness" loading="lazy">
+                <div class="program-card-content"><span>03 / TRACK</span><h3>Visible Progress</h3><p>Review your fitness measurements and see how far you have come.</p></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="journey-banner">
+        <div>
+            <span class="section-kicker">THE NEXT REP IS YOURS</span>
+            <h2>DON'T WAIT FOR<br><span>MOTIVATION.</span> BUILD MOMENTUM.</h2>
+        </div>
+        {% if not is_logged_in %}
+            <a href="{{ url_for('auth.register') }}" class="btn btn-accent btn-hero">Join Smart Gym <span>→</span></a>
+        {% elif current_user_role == 'member' %}
+            <a href="{{ url_for('member.dashboard') }}" class="btn btn-accent btn-hero">View My Fitness Hub <span>→</span></a>
+        {% elif current_user_role == 'trainer' %}
+            <a href="{{ url_for('trainer.dashboard') }}" class="btn btn-accent btn-hero">Trainer Workspace <span>→</span></a>
+        {% else %}
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-accent btn-hero">Manage Smart Gym <span>→</span></a>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

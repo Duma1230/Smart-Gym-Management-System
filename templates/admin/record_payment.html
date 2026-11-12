@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Record Offline Payment - Admin{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 2rem; font-weight: 700;">Record Offline Payment</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.2rem;">
+            Record a cash, bank transfer, POS, or cheque transaction and activate member access.
+        </p>
+    </div>
+    <a href="{{ url_for('admin.payments') }}" class="btn btn-secondary">&larr; Back to Payments</a>
+</div>
+
+<div class="auth-wrapper wide" style="margin-top: 0;">
+    <div class="card" style="border-color: rgba(16, 185, 129, 0.4);">
+        <h2 class="card-title">Offline Payment Entry</h2>
+        <p class="card-subtitle">
+            Submitting this payment will automatically transition the member's subscription to <strong>Active</strong> status.
+        </p>
+
+        <form method="POST" action="{{ url_for('admin.record_payment') }}">
+            <!-- 1. Member Selection -->
+            <div class="form-group">
+                <label for="member_id" class="form-label">Gym Member *</label>
+                <select id="member_id" name="member_id" class="form-control" required onchange="handleMemberChange()">
+                    <option value="">-- Select Approved Member --</option>
+                    {% for m in members %}
+                        <option value="{{ m.id }}" {% if prefill_member_id == m.id %}selected{% endif %}>
+                            {{ m.full_name }} ({{ m.email }})
+                        </option>
+                    {% endfor %}
+                </select>
+                <span class="member-sub" style="display: block; margin-top: 0.25rem;">
+                    Only approved members are eligible for plan assignment and payment recording.
+                </span>
+            </div>
+
+            <!-- 2. Existing Pending Membership or New Plan -->
+            {% if pending_memberships %}
+                <div class="form-group" id="pending-membership-group" style="background: rgba(245, 158, 11, 0.08); padding: 1rem; border-radius: var(--radius-sm); border: 1px dashed rgba(245, 158, 11, 0.4);">
+                    <label class="form-label" style="color: #fbbf24;">Pending Membership Detected</label>
+                    <select id="membership_id" name="membership_id" class="form-control" onchange="handleMembershipChange()">
+                        <option value="">-- Choose Assigned Pending Membership or Create New --</option>
+                        {% for pm in pending_memberships %}
+                            <option value="{{ pm.id }}" data-member="{{ pm.member_id }}" data-price="{{ pm.price }}"
+                                    {% if prefill_membership_id == pm.id or (prefill_member_id == pm.member_id and loop.first) %}selected{% endif %}>
+                                {{ pm.member_name }} - {{ pm.plan_name }} (LKR {{ "{:,.2f}".format(pm.price) }}) [Valid: {{ pm.start_date }} to {{ pm.end_date }}]
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <span class="member-sub" style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                        Select an existing pending membership above, OR select a new plan below to assign and pay at once.
+                    </span>
+                </div>
+            {% endif %}
+
+            <!-- 3. Plan Selection (for new assignment + payment) -->
+            <div class="form-group" id="plan-selection-group">
+                <label for="plan_id" class="form-label">Membership Package *</label>
+                <select id="plan_id" name="plan_id" class="form-control" onchange="handlePlanChange()">
+                    <option value="">-- Select Membership Package --</option>
+                    {% for p in plans %}
+                        <option value="{{ p.id }}" data-price="{{ p.price }}" data-duration="{{ p.duration_days }}">
+                            {{ p.plan_name }} - LKR {{ "{:,.2f}".format(p.price) }} ({{ p.duration_days }} Days)
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 4. Amount and Payment Method -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="amount" class="form-label">Payment Amount (LKR) *</label>
+                    <input type="number" step="0.01" id="amount" name="amount" class="form-control" placeholder="0.00" min="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="payment_method" class="form-label">Payment Method *</label>
+                    <select id="payment_method" name="payment_method" class="form-control" required>
+                        {% for method in allowed_methods %}
+                            <option value="{{ method }}">{{ method }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- 5. Payment Date and Reference Number -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="payment_date" class="form-label">Payment Date *</label>
+                    <input type="date" id="payment_date" name="payment_date" class="form-control" value="{{ today_date }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reference_number" class="form-label">Receipt / Reference Number</label>
+                    <input type="text" id="reference_number" name="reference_number" class="form-control" placeholder="e.g. REC-2026-0042, POS Slip #, UPI Ref">
+                </div>
+            </div>
+
+            <!-- 6. Additional Notes -->
+            <div class="form-group">
+                <label for="notes" class="form-label">Administrative Notes (Optional)</label>
+                <textarea id="notes" name="notes" rows="2" class="form-control" placeholder="e.g. Paid in cash at front reception desk, received full amount."></textarea>
+            </div>
+
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #6ee7b7;">
+                <strong>⚡ Notice:</strong> Upon recording this offline payment, the member's account is instantly activated, and they will see their active subscription and receipts on their Member Portal.
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="submit" class="btn btn-accent btn-block" style="font-size: 1rem;">
+                    Confirm &amp; Record Offline Payment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function handlePlanChange() {
+    const planSelect = document.getElementById("plan_id");
+    const amountInput = document.getElementById("amount");
+    const selectedOption = planSelect.options[planSelect.selectedIndex];
+    if (selectedOption && selectedOption.dataset.price) {
+        amountInput.value = parseFloat(selectedOption.dataset.price).toFixed(2);
+    }
+}
+
+function handleMembershipChange() {
+    const memSelect = document.getElementById("membership_id");
+    const amountInput = document.getElementById("amount");
+    const memberSelect = document.getElementById("member_id");
+    if (!memSelect) return;
+
+    const selectedOption = memSelect.options[memSelect.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+        if (selectedOption.dataset.price) {
+            amountInput.value = parseFloat(selectedOption.dataset.price).toFixed(2);
+        }
+        if (selectedOption.dataset.member) {
+            memberSelect.value = selectedOption.dataset.member;
+        }
+    }
+}
+
+function handleMemberChange() {
+    const memberId = document.getElementById("member_id").value;
+    const memSelect = document.getElementById("membership_id");
+    if (!memSelect) return;
+
+    // Filter or highlight matching pending membership if any
+    let foundMatch = false;
+    for (let i = 0; i < memSelect.options.length; i++) {
+        const opt = memSelect.options[i];
+        if (opt.dataset.member === memberId) {
+            memSelect.selectedIndex = i;
+            handleMembershipChange();
+            foundMatch = true;
+            break;
+        }
+    }
+    if (!foundMatch && memSelect.selectedIndex > 0) {
+        memSelect.selectedIndex = 0;
+    }
+}
+
+// Auto-trigger on page load
+document.addEventListener("DOMContentLoaded", () => {
+    handleMembershipChange();
+    if (!document.getElementById("amount").value) {
+        handlePlanChange();
+    }
+});
+</script>
+{% endblock %}
